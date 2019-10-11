@@ -1,0 +1,87 @@
+﻿@model GigHub.ViewModels.HomeViewModel
+@{
+    ViewBag.Title = "Home Page";
+}
+<h1>@Model.Heading</h1>
+<br>
+
+@using (Html.BeginForm("Search","Gigs"))
+{
+	<div class="form-group">
+		<div class="input-group" style="width: 300px">
+			@Html.TextBoxFor(m => m.SearchTerm, new {@class = "form-control", placeholder = "search by Artist,Genre,Venue" })
+			<span class="input-group-addon">
+				<i class="glyphicon glyphicon-search"></i>
+			</span>
+		</div>
+	</div>
+}
+
+<ul class="gigs">
+    @foreach(var gig in Model.UpcommingGigs)
+    {
+        <li> <!-- relative position -->
+			<div class="date">
+				<div class="month">
+					@gig.DateTime.ToString("MMM")
+				</div>
+				<div class="day">
+					@gig.DateTime.ToString("d ")
+				</div>
+			</div>
+			<div class="details"> <!-- absolute position -->
+				<span class="artist">
+					@gig.Artist.Name 
+
+					@if (gig.IsCanceled) {
+						<span class="label label-warning">Canceled</span>
+					}
+
+					@if(Model.ShowActions){
+						 <button class="btn btn-link btn-sm  js-toggle-follow" data-user-id="@gig.ArtistId">Follow</button>
+					}
+					
+				</span>
+				 <span class="genre">
+					@gig.Genre.Name
+				 </span> 
+				@if(Model.ShowActions && !gig.IsCanceled)
+				{
+					<button data-gig-id="@gig.Id"class="btn btn-default btn-sm pull-right js-toggle-attendance">Going ?</button>
+				}
+			</div>
+		</li>
+    }
+</ul>
+
+@section scripts
+{
+	<script>
+	 $(document).ready(function(){
+		 $(".js-toggle-attendance").click(function (e){
+			 var button = $(e.target);
+			 $.post("/api/attendances", { gigId: button.attr("data-gig-id") })
+				.done(function(){
+					button
+						.removeClass("btn-default")
+						.addClass("btn-info")
+						.text("Going");
+				})
+				.fail(function(){
+					alert("Something failed!");
+				});
+		 });
+
+		  $(".js-toggle-follow").click(function (e) {
+			  var button = $(e.target);
+			  $post("/api/following", { followweeId: button.attr("data-user-id")
+			  .done(function () {
+				  button.text("following");
+			  })
+			  .fail( function() {
+				  alert("somthing failed");
+				  });
+		});
+	 });
+	</script>
+}

@@ -1,0 +1,101 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewBag.Title - My ASP.NET Application</title>
+    @Styles.Render("~/Content/css")
+    @Scripts.Render("~/bundles/modernizr")
+
+</head>
+<body>
+    <div class="navbar navbar-inverse navbar-fixed-top">
+        <div class="container">
+            <div class="navbar-header">
+                
+                @Html.ActionLink("SongHub", "Index", "Home", new { area = "" }, new { @class = "navbar-brand" })
+            </div>
+            <div class="navbar-collapse collapse">
+                <ul class="nav navbar-nav">
+                    <li>@Html.ActionLink("Add Event", "Create", "Gigs")</li>
+                </ul>
+                @Html.Partial("_LoginPartial")
+            </div>
+        </div>
+    </div>
+    <div class="container body-content">
+        @RenderBody()
+        <hr />
+        <footer>
+            <p>&copy; @DateTime.Now.Year - My ASP.NET Application</p>
+        </footer>
+    </div>
+
+    @Scripts.Render("~/bundles/jquery")
+    @Scripts.Render("~/bundles/bootstrap")
+    @RenderSection("scripts", required: false)
+	
+	<script type="text/x-template" id= "notifications-template"> 
+		<ul class="notifications">
+			<% 
+				_.each(notifications, function(notification){
+					if(notification.type == 1) { %>
+						<li><%= notification.gig.artist.name %> has cancled the gig at <%= notification.venue %> at <%= notification.gig.datetime %></li>
+					<% }
+					else if(notification.type == 2) {
+						var change = [],
+							originalValues = [],
+							newValues = [];
+						if(notification.originalValue != notification.gig.venue) {
+							change.push('venue');
+							originalValues.push(notification.originalValue);
+							newValues.push(notification.gig.venue);
+						}
+						if(notification.originalDateTime != notification.gig.datetime) {
+							change.push('date/time');
+							originalValues.push(notification.originalDateTime);
+							newValues.push(notification.gig.datetime);
+						}
+					%>
+						<li> <%= notification.gig.artist.name %> has cancled the <%= changes.join(' and ')%> of the gig from <%= originalValues.join('/') %> to <%= newValues.join('/') %> </li>
+					<%
+					}
+				})
+			%>
+		</ul>
+	</script>
+	<script>
+		$(document).ready(function () {
+			$.getJSON("/api/notifications", function (notifications) {
+				
+				if(notifications.length == 0)
+					return;
+				
+				$(".js-notifications-count")
+					.text(notifications.length)
+					.removeClass("hide");
+					
+					$(".notifications").popover({
+					html: true,
+					title: "Notification",
+					content: function () {
+						var compiled = _.template($("#notifications-template").html());
+						return compiled ({ notifications: notifications });
+					},
+					placement: "bottom"
+				}).on("shown.bs.popover", function() {
+					$.post("/api/notifications/MarkAsRead")
+						.done(function () {
+							$(".js-notifications-count")
+								.text("")
+								.addClass("hide");
+						});
+				});
+			});
+		
+		});
+	</script>
+
+</body>
+</html>
+
